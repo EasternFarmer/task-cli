@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "task_cli"
+version = "1.0.0"
+dependencies = [
+    'platformdirs'
+]
+authors = [
+  { name="EasternFarmer", email="franek.banas1@gmail.com" },
+]
+description = "Yet another task manager"
+readme = "README.md"
+
+requires-python = ">=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/EasternFarmer/types_remover"
+Issues = "https://github.com/EasternFarmer/types_remover/issues"
+
+[project.scripts]
+task-cli = "task_cli.cli:main"

@@ -1,5 +1,8 @@
-import src.command_line as command_line
 from os import system, name as os_name
+import sys
+
+from . import command_line
+
 
 def smart_split(user_input: str) -> list[str]:
     current_word: str = ''
@@ -22,7 +25,8 @@ def run() -> None:
         user_input = smart_split(input('>>> task-cli '))
         if user_input[0].lower() in ['exit', 'quit']:
             break
-        if user_input[0] == 'cls':
+        if user_input[0] in ['cls', 'clear']:
             system('cls' if os_name == 'nt' else 'clear')
             continue
-        command_line.run(user_input)
+        sys.argv[1:] = user_input
+        command_line.run()
