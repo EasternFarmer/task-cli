@@ -13,3 +13,5 @@ Interface mode is the same as command-line mode except you don't have to write t
 To exit the interface mode enter `exit` or `quit` command
 
 ## For more information visit the `help` command
+
+*This project should work on 3.6 but annotations*
