@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "task-command-line"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
     'platformdirs'
 ]
@@ -14,7 +14,7 @@ authors = [
 description = "Yet another task manager"
 readme = "README.md"
 
-requires-python = ">=3.9"
+requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -25,4 +25,4 @@ Homepage = "https://github.com/EasternFarmer/task-cli"
 Issues = "https://github.com/EasternFarmer/task-cli/issues"
 
 [project.scripts]
-task-cli = "task_cli.cli:main"
+task-cli = "task_command_line.__main__:main"

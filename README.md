@@ -1,17 +1,59 @@
 # Task-cli project
+> **Cli package for managing your tasks**
 
-## Source.
+## Installation
 
-I took the project idea from https://roadmap.sh/projects/task-tracker
+pip install this repo.
+(Note: Incompatible with Python 2.x)
 
-## Usage.
+```sh
+pip3 install task-command-line
+```
 
-* To run the script in the Command-line mode run `task-cli <command> [args]` or `python -m task_cli <command> [args]`<br>
-if the `args` is empty and needed shows the command signature
-* To run the script in the Interface mode run `task-cli run` or `python -m task-cli run`<br>
-Interface mode is the same as command-line mode except you don't have to write the `python -m task_cli` prefix everytime<br>
-To exit the interface mode enter `exit` or `quit` command
+(or)
 
-## For more information visit the `help` command
+```sh
+pip install task-command-line
+```
 
-*This project should work on 3.6 but annotations*
+
+## Usage example
+
+### To get help with commandline arguments
+
+```sh
+task-cli help
+```
+
+### Using Command-line Arguments
+
+```sh
+task-cli add "feed the dogs"
+```
+
+
+### Disable Color Output
+
+```sh
+task-cli help --no_color
+```
+
+(or)
+
+```sh
+task-cli help -nc
+```
+
+## IO Redirection
+
+the response is written to stdout and headers/status are written to stderr so that users can take IO redirection to their advantage. This works on windows, linux and mac.
+
+```sh
+task-cli help > output.txt 2> error.txt
+```
+
+both stdout and stderr can be redirected to the same file
+
+```sh
+task-cli help > output.txt 2>&1
+```

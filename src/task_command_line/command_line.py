@@ -1,29 +1,37 @@
-from argparse import Namespace
+from __future__ import annotations
+
 from datetime import datetime  # time stamps
 import json
 from difflib import get_close_matches as _get_close_matches  # close match for suggestions if the command / status is invalid
 import os.path
-from pathlib import Path
-from typing import Optional
+import sys
+from typing import TYPE_CHECKING
+
+from . import colors
+
+
+if TYPE_CHECKING:
+    from argparse import Namespace
+    from pathlib import Path
+    from typing import Optional, Literal
 
 import platformdirs
 
-from . import colors as c  # Colored Output :D
 
+# Colored Output :D
+c = colors.NotColored
 
 save_path = platformdirs.user_data_path('task-cli')
 
-save_json = dict[str, list]
-
 
 class TaskCliData:
-    commands: list[str] = ['add', 'update', 'undo update', 'delete', 'mark',
-                           'mark-in-progress', 'mark-done', 'mark-todo', 'list',
-                           'inspect', 'help']
+    commands: 'list[str]' = ['add', 'update', 'undo update', 'delete', 'mark',
+                             'mark-in-progress', 'mark-done', 'mark-todo',
+                             'list', 'inspect', 'help']
 
-    status_options: list[str] = ['todo', 'in-progress', 'done']
+    status_options: 'list[str]' = ['todo', 'in-progress', 'done']
 
-    command_signature: dict[str, str] = {
+    command_signature: 'dict[str, str]' = {
         "add": 'add <description>',
         "update": 'update <task_id> <new description>',
         "undo update": 'undo update <task_id>',
@@ -34,14 +42,22 @@ class TaskCliData:
         "help": 'help [command]'
     }
 
-    help_commands: list[str] = ['main_page', 'commands'] + commands[:-1]
+    help_commands: 'list[str]' = ['main_page', 'commands'] + commands[:-1]
 
 
 def current_time() -> str:
+    """returns current time without unit smaller than 1s"""
     return str(datetime.now()).split('.')[0]
 
 
-def _input_exception(mode: str, command: str) -> None:
+def _input_exception(
+    mode: "Literal['invalid command', 'status entry', 'not enough inputs', 'error', 'id too large', 'invalid data type']",
+    command: str
+) -> None:
+    """
+    Function printing an error message based on the mode param
+    :param command: the command the error occurred in
+    """
     if mode == 'invalid command':
         print(
             f'{c.RED}Could not find command "{command}". Did you mean "{_get_close_matches(command, TaskCliData.commands, 1, 0)[0]}"?{c.RESET}'
@@ -68,7 +84,7 @@ def _input_exception(mode: str, command: str) -> None:
         )
 
 
-def _help(page: Optional[str] = None) -> None:
+def help(page: 'Optional[str]' = None) -> None:
     if page is None:
         page = ''
 
@@ -154,14 +170,14 @@ def _help(page: Optional[str] = None) -> None:
         )
 
 
-def _save(json_path: tuple[Path, str], json_data: dict) -> None:
+def _save(json_path: 'tuple[Path, str]', json_data: dict) -> None:
     if not os.path.exists(json_path[0]):
         os.makedirs(json_path[0])
     with open(json_path[0] / json_path[1], 'w') as f:
         f.write(json.dumps(json_data, indent = 4))
 
 
-def _load(json_path: tuple[Path, str]) -> dict[str, list]:
+def _load(json_path: 'tuple[Path, str]') -> 'dict[str, list]':
     try:
         with open(json_path[0] / json_path[1], 'r') as f:
             return json.load(f)
@@ -172,8 +188,8 @@ def _load(json_path: tuple[Path, str]) -> dict[str, list]:
 
 
 def _print_tasks_from_list(
-    json_data: save_json,
-    list_of_tasks: list[dict[str, str]],
+    json_data: 'dict[str, list]',
+    list_of_tasks: 'list[dict[str, str]]',
     status: str
 ) -> None:
     print(f'{c.BLUE}Displaying tasks with a status of \'{status}\':{c.RESET}')
@@ -198,7 +214,10 @@ def _print_tasks_from_list(
             )
 
 
-def _add(json_data: save_json, description: Optional[str]) -> dict[str, list]:
+def _add_task(
+    json_data: 'dict[str, list]',
+    description: 'Optional[str]'
+) -> 'dict[str, list]':
     if description is None:
         _input_exception('not enough inputs', 'add')
         return json_data
@@ -217,11 +236,11 @@ def _add(json_data: save_json, description: Optional[str]) -> dict[str, list]:
     return json_data
 
 
-def _update(
-    json_data: save_json,
-    option1: Optional[str],
-    new_description: Optional[str]
-) -> save_json:
+def _update_task(
+    json_data: 'dict[str, list]',
+    option1: 'Optional[str]',
+    new_description: 'Optional[str]'
+) -> 'dict[str, list]':
     if option1 is None or new_description is None:
         _input_exception('not enough inputs', 'update')
         return json_data
@@ -236,14 +255,17 @@ def _update(
         _input_exception('id too large', option1)
         return json_data
     json_data['tasks'][task_id]['old_description'] = \
-    json_data['tasks'][task_id]['description']
+        json_data['tasks'][task_id]['description']
     json_data['tasks'][task_id]['description'] = new_description
     json_data['tasks'][task_id]['updated_at'] = current_time()
     print(f'{c.GREEN}Task updated successfully (ID: {task_id}){c.RESET}')
     return json_data
 
 
-def _delete(json_data: save_json, option1: Optional[str]) -> save_json:
+def _delete_task(
+    json_data: 'dict[str, list]',
+    option1: 'Optional[str]'
+    ) -> 'dict[str, list]':
     if option1 is None:
         _input_exception('not enough inputs', 'delete')
         return json_data
@@ -275,7 +297,10 @@ def _delete(json_data: save_json, option1: Optional[str]) -> save_json:
     return json_data
 
 
-def _undo_update(json_data: save_json, option1: Optional[str]) -> save_json:
+def _undo_update_on_task(
+    json_data: 'dict[str, list]',
+    option1: 'Optional[str]'
+    ) -> 'dict[str, list]':
     if option1 is None:
         _input_exception('not enough inputs', 'undo update')
         return json_data
@@ -297,11 +322,11 @@ def _undo_update(json_data: save_json, option1: Optional[str]) -> save_json:
     return json_data
 
 
-def _mark(
-    json_data: save_json,
-    option1: Optional[str],
-    status: Optional[str]
-) -> save_json:
+def _mark_task(
+    json_data: 'dict[str, list]',
+    option1: 'Optional[str]',
+    status: 'Optional[str]'
+) -> 'dict[str, list]':
     if option1 is None or status is None:
         _input_exception('not enough inputs', 'mark')
         return json_data
@@ -325,7 +350,10 @@ def _mark(
     return json_data
 
 
-def _list(json_data: save_json, status: Optional[str]) -> None:
+def _list_tasks(
+    json_data: 'dict[str, list]',
+    status: 'Optional[Literal["todo", "in-progress", "done"]]'
+    ) -> None:
     if status is None:
         _print_tasks_from_list(
             json_data,
@@ -340,9 +368,9 @@ def _list(json_data: save_json, status: Optional[str]) -> None:
         _print_tasks_from_list(json_data, todo_tasks, 'TODO')
     elif status == 'in-progress':
         in_progress_tasks = [json_data['tasks'][task_id] for task_id in
-                             range(len(json_data['tasks'])) if
-                             json_data['tasks'][task_id][
-                                 'status'] == 'in-progress']
+                             range(len(json_data['tasks']))
+                             if json_data['tasks'][task_id]['status']
+                             == 'in-progress']
         _print_tasks_from_list(json_data, in_progress_tasks, 'TODO')
     elif status == 'done':
         done_tasks = [json_data['tasks'][task_id] for task_id in
@@ -353,7 +381,10 @@ def _list(json_data: save_json, status: Optional[str]) -> None:
         _input_exception('status entry', status)
 
 
-def _inspect(json_data: save_json, option1: Optional[str]) -> None:
+def _inspect_task(
+    json_data: 'dict[str, list]',
+    option1: 'Optional[str]'
+    ) -> None:
     try:
         task_id = int(option1)
     except ValueError:
@@ -380,11 +411,17 @@ def _inspect(json_data: save_json, option1: Optional[str]) -> None:
     )
 
 
-def parse_args() -> Namespace:
+def parse_args() -> 'Namespace':
     import argparse
     parser = argparse.ArgumentParser(
         prog = 'task-cli',
-        epilog = 'for full help use the `help` command'
+        epilog = 'for full help use the `help` command\n'
+    )
+    parser.add_argument(
+        '--no_color',
+        '-nc',
+        action = 'store_true',
+        default = False
     )
     parser.add_argument(
         'command',
@@ -397,31 +434,37 @@ def parse_args() -> Namespace:
 
 def run() -> None:
     args = parse_args()
+
+    # if output stays on terminal then isatty() returns True
+    # if output is redirected to file then isatty() returns False
+    if not args.no_color and sys.stdout.isatty():
+        global c
+        c = colors.Colored
     if args.command.lower() == 'help':  # help
-        _help(args.option1)
+        help(args.option1)
         return
     data = _load((save_path, 'task_list.json'))
 
     if args.command.lower() == 'add':
-        data = _add(data, args.option1)
+        data = _add_task(data, args.option1)
     elif args.command.lower() == 'list':
-        _list(data, args.option1)
+        _list_tasks(data, args.option1)
     elif args.command.lower() == 'update':
-        data = _update(data, args.option1, args.option2)
+        data = _update_task(data, args.option1, args.option2)
     elif args.command.lower() == 'mark':
-        data = _mark(data, args.option1, args.option2)
+        data = _mark_task(data, args.option1, args.option2)
     elif args.command.lower() == 'mark-todo':
-        data = _mark(data, args.option1, 'todo')
+        data = _mark_task(data, args.option1, 'todo')
     elif args.command.lower() == 'mark-done':
-        data = _mark(data, args.option1, 'done')
+        data = _mark_task(data, args.option1, 'done')
     elif args.command.lower() == 'mark-in-progress':
-        data = _mark(data, args.option1, 'in-progress')
+        data = _mark_task(data, args.option1, 'in-progress')
     elif args.command.lower() == 'delete':
-        data = _delete(data, args.option1)
+        data = _delete_task(data, args.option1)
     elif args.command.lower() == 'inspect':
-        _inspect(data, args.option1)
+        _inspect_task(data, args.option1)
     elif args.command == 'undo' and args.option1 == 'update':
-        data = _undo_update(data, args.option2)
+        data = _undo_update_on_task(data, args.option2)
     else:
         _input_exception('invalid command', args.command)
     _save((save_path, 'task_list.json'), data)
